@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Home - FilmHub{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4" role="heading" aria-level="1">Welcome to FilmHub</h1>
+        <p class="lead">Discover, favorite and share movies you love</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-8">
+        <h2 class="h4" role="heading" aria-level="2">Popular Movies</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for movie in movies %}
+            <div class="col">
+                <div class="card movie-card h-100" role="article" aria-label="Movie: {{ movie.title }}">
+                    <div class="card-body">
+                        <h3 class="h5 card-title">{{ movie.title }} ({{ movie.year }})</h3>
+                        <p class="card-text text-muted small">{{ movie.director }}</p>
+                        <p class="card-text">{{ movie.description[:100] }}{% if movie.description|length > 100 %}...{% endif %}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-primary">Rating: {{ movie.rating }}</span>
+                                    <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       aria-label="View details for {{ movie.title }}">
+                                    Details
+                                    </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="h5 card-title">Quick Start</h3>
+                <ul class="list-unstyled">
+                    {% if not current_user.is_authenticated %}
+                    <li class="mb-2">
+                        <a href="{{ url_for('register') }}" class="btn btn-primary w-100">Register</a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary w-100">Login</a>
+                    </li>
+                    {% else %}
+                    <li class="mb-2">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-primary w-100">My Dashboard</a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="{{ url_for('movies') }}" class="btn btn-outline-primary w-100">Browse movies</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h3 class="h5 card-title">Site features</h3>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item border-0 px-0 py-2">
+                        <i class="bi bi-star-fill text-warning me-2" aria-hidden="true"></i>
+                        Favorites system
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-2">
+                        <i class="bi bi-tags-fill text-success me-2" aria-hidden="true"></i>
+                        Multi-tag categorization
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-2">
+                        <i class="bi bi-chat-text-fill text-info me-2" aria-hidden="true"></i>
+                        User reviews
+                    </li>
+                    <li class="list-group-item border-0 px-0 py-2">
+                        <i class="bi bi-lightbulb-fill text-warning me-2" aria-hidden="true"></i>
+                        Personalized recommendations
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info" role="alert">
+            <h4 class="alert-heading">WCAG 2.1 compliance</h4>
+            <p>This site follows WCAG 2.1 AA guidelines to ensure accessibility for all users.</p>
+            <hr>
+            <p class="mb-0">Users of screen readers can navigate using the Tab key.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Add keyboard navigation support
+document.addEventListener('DOMContentLoaded', function() {
+    const movieCards = document.querySelectorAll('.movie-card');
+    movieCards.forEach((card, index) => {
+        card.setAttribute('tabindex', '0');
+        card.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const link = this.querySelector('a');
+                if (link) link.click();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

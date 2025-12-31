@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Movies - FilmHub{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h2 mb-3" role="heading" aria-level="1">Movies</h1>
+        
+        <!-- Search & filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('movies') }}" class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" 
+                               class="form-control" 
+                               name="search" 
+                               placeholder="Search movie titles, directors or descriptions..."
+                                   value="{{ search_query }}"
+                                   aria-label="Search movies">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <select class="form-select" name="tag" aria-label="Filter by tag">
+                            <option value="">All tags</option>
+                            {% for tag in tags %}
+                            <option value="{{ tag.name }}" {% if current_tag == tag.name %}selected{% endif %}>
+                                {{ tag.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <select class="form-select" name="sort" aria-label="Sort by">
+                            <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Sort by title</option>
+                            <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Sort by rating</option>
+                            <option value="year" {% if sort_by == 'year' %}selected{% endif %}>Sort by year</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Movie list -->
+<div class="row">
+    {% if movies %}
+    {% for movie in movies %}
+    <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 movie-card" role="article" aria-label="Movie: {{ movie.title }}">
+            <div class="card-body">
+                <h2 class="h5 card-title">{{ movie.title }}</h2>
+                <p class="card-subtitle mb-2 text-muted small">{{ movie.year }} • {{ movie.director }}</p>
+                <p class="card-text">{{ movie.description[:120] }}{% if movie.description|length > 120 %}...{% endif %}</p>
+                
+                <div class="mb-3">
+                    {% for tag in movie.tags[:3] %}
+                    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                    {% endfor %}
+                    {% if movie.tags|length > 3 %}
+                    <span class="badge bg-light text-dark">+{{ movie.tags|length - 3 }}</span>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-warning text-dark">⭐ {{ movie.rating }}</span>
+                        <small class="text-muted ms-2">{{ movie.favorited_by.count() }} favorites</small>
+                    </div>
+                    
+                    <div>
+                        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" 
+                           class="btn btn-sm btn-primary" 
+                          aria-label="View details for {{ movie.title }}">
+                           Details
+                        </a>
+                        {% if current_user.is_authenticated %}
+                        <button class="btn btn-sm favorite-btn
+                                {% if current_user.is_authenticated and movie in current_user.favorite_movies.all() %}
+                                    btn-danger active
+                                {% else %}
+                                    btn-outline-danger
+                                {% endif %}"
+                                data-movie-id="{{ movie.id }}"
+                                data-initial-favorite="{{ 'true' if current_user.is_authenticated and movie in current_user.favorite_movies.all() else 'false' }}"
+                                data-authenticated="{{ 'true' if current_user.is_authenticated else 'false' }}"
+                                aria-label="{% if current_user.is_authenticated and movie in current_user.favorite_movies.all() %}Remove favorite{% else %}Favorite{% endif %} {{ movie.title }}"
+                                aria-pressed="{{ 'true' if current_user.is_authenticated and movie in current_user.favorite_movies.all() else 'false' }}">
+
+                                <i class="bi {% if current_user.is_authenticated and movie in current_user.favorite_movies.all() %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info" role="alert">
+            No matching movies found. Try different search criteria.
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Pagination controls -->
+{% if pagination and pagination.pages > 1 %}
+<div class="row mt-4">
+    <div class="col-12">
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('movies', page=pagination.prev_num, tag=current_tag, search=search_query, sort=sort_by) }}" tabindex="-1">Previous</a>
+                </li>
+
+                {% for p in range(1, pagination.pages + 1) %}
+                <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('movies', page=p, tag=current_tag, search=search_query, sort=sort_by) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('movies', page=pagination.next_num, tag=current_tag, search=search_query, sort=sort_by) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tag cloud -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h5 mb-0" role="heading" aria-level="2">Movie Tags</h2>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for tag in tags %}
+                    <a href="{{ url_for('movies', tag=tag.name) }}" 
+                       class="badge bg-primary text-decoration-none {% if current_tag == tag.name %}active{% endif %}"
+                       style="font-size: 1em; padding: 0.5em 1em;">
+                        {{ tag.name }}
+                        <span class="badge bg-light text-dark ms-1">{{ tag.movies|length }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %}
